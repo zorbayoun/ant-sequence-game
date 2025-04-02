@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>개미수열 게임</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f5f5f5;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    #gameContainer {
+      text-align: center;
+      width: 90%;
+      max-width: 600px;
+    }
+
+    #antCharacter img {
+      width: 100px;
+      height: auto;
+      margin-bottom: 10px;
+    }
+
+    #sequence, #userInputDisplay {
+      font-size: 2rem;
+      letter-spacing: 8px;
+      white-space: nowrap;
+      overflow-x: auto;
+      margin-bottom: 10px;
+    }
+
+    #userInputDisplay {
+      color: #000;
+      min-height: 2rem;
+    }
+
+    #sequence {
+      color: #555;
+    }
+
+    #timer, #score, #level, #message {
+      margin-bottom: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    #pauseOverlay, #gameOverOverlay, #tutorialOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 999;
+      font-size: 1.2rem;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #pauseOverlay {
+      background-color: rgba(255, 255, 255, 0.9);
+    }
+
+    #gameOverOverlay {
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+    }
+
+    #tutorialOverlay {
+      background-color: rgba(0,0,0,0.8);
+      color: white;
+    }
+
+    #tutorialOverlay button {
+      margin-top: 20px;
+    }
+
+    #mobileKeypad {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 10px;
+    }
+
+    .keypad-button {
+      width: 60px;
+      height: 60px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      border: 2px solid #333;
+      border-radius: 10px;
+      background-color: white;
+      box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .keypad-button:active {
+      background-color: #e0e0e0;
+    }
+
+    @media (max-width: 500px) {
+      .keypad-button {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+      }
+    }
+
+    #startButtons {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <div id="antCharacter">
+      <img id="antImage" src="images/Ant1.png" alt="Ant Character" />
+    </div>
+    <div id="level">레벨: 1</div>
+    <div id="score">점수: 0</div>
+    <div id="timer">제한시간: 10초</div>
+    <div id="message"></div>
+    <div id="sequence"></div>
+    <div id="userInputDisplay"></div>
+
+    <!-- 시작화면 버튼 -->
+    <div id="startButtons">
+      <button id="tutorialButton" onclick="showTutorial()">Tutorial</button>
+      <button id="startButton" onclick="startGame()">Start</button>
+    </div>
+
+    <button id="pauseButton" onclick="togglePause()" style="display:none;">Pause</button>
+
+    <!-- 키패드 -->
+    <div id="mobileKeypad">
+      <button class="keypad-button" onclick="checkInput('1')">1</button>
+      <button class="keypad-button" onclick="checkInput('2')">2</button>
+      <button class="keypad-button" onclick="checkInput('3')">3</button>
+    </div>
+  </div>
+
+  <!-- Pause -->
+  <div id="pauseOverlay">
+    <div>Pause 중</div>
+    <button onclick="togglePause()">Continue</button>
+    <button onclick="resetGame()">Restart</button>
+  </div>
+
+  <!-- Game Over -->
+  <div id="gameOverOverlay">
+    <div id="gameOverText"></div>
+    <button onclick="resetGame()">Restart</button>
+  </div>
+
+  <!-- Tutorial -->
+  <div id="tutorialOverlay">
+    <div>
+      개미수열은 ‘보는 대로 말하는 수열’이에요.<br><br>
+      예를 들어, 숫자 1을 보면 → "1이 1개 있어요" → 11<br>
+      예를 들어, 숫자 11을 보면 → "1이 2개 있어요" → 12<br>
+      예를 들어, 숫자 12을 보면 → "1이 1개, 2가 1개 있어요" → 1121
+    </div>
+    <button onclick="hideTutorial()">닫기</button>
+  </div>
+
+  <script>
+    let currentSequence = '1', nextSequence = '', userInput = '';
+    let level = 1, score = 0, timer, paused = false, sequenceStartTime;
+    const timeLimit = 10;
+
+    function nextAntSequence(seq) {
+      let result = '', i = 0;
+      while (i < seq.length) {
+        let count = 1;
+        while (i + 1 < seq.length && seq[i] === seq[i + 1]) { i++; count++; }
+        result += seq[i] + count; i++;
+      }
+      return result;
+    }
+
+    function displaySequence() {
+      document.getElementById('sequence').textContent = currentSequence;
+      document.getElementById('userInputDisplay').textContent = '';
+      nextSequence = nextAntSequence(currentSequence);
+      userInput = '';
+      resetTimer();
+      sequenceStartTime = Date.now();
+    }
+
+    function checkInput(key) {
+      if (paused || !'123'.includes(key)) return;
+      userInput += key;
+      const inputEl = document.getElementById('userInputDisplay');
+      inputEl.textContent = userInput;
+      inputEl.scrollLeft = inputEl.scrollWidth;
+      const correctInput = nextSequence.slice(0, userInput.length);
+      if (userInput !== correctInput) showGameOver();
+      else if (userInput === nextSequence) {
+        score += nextSequence.length;
+        level++;
+        document.getElementById('score').textContent = '점수: ' + score;
+        document.getElementById('level').textContent = '레벨: ' + level;
+        updateAntCharacterImage(level);
+        currentSequence = nextSequence;
+        displaySequence();
+      }
+    }
+
+    function updateAntCharacterImage(level) {
+      const img = document.getElementById('antImage');
+      if (level >= 11) img.src = 'images/Ant6.png';
+      else if (level >= 9) img.src = 'images/Ant5.png';
+      else if (level >= 7) img.src = 'images/Ant4.png';
+      else if (level >= 5) img.src = 'images/Ant3.png';
+      else if (level >= 3) img.src = 'images/Ant2.png';
+      else img.src = 'images/Ant1.png';
+    }
+
+    function resetTimer() {
+      clearInterval(timer); let timeLeft = timeLimit;
+      document.getElementById('timer').textContent = '제한시간: ' + timeLeft + '초';
+      timer = setInterval(() => {
+        if (!paused && --timeLeft <= 0) {
+          clearInterval(timer); showGameOver();
+        }
+        document.getElementById('timer').textContent = '제한시간: ' + timeLeft + '초';
+      }, 1000);
+    }
+
+    function showGameOver() {
+      clearInterval(timer);
+      document.getElementById('gameOverText').innerText = `Game Over!\n레벨: ${level}, 점수: ${score}`;
+      document.getElementById('gameOverOverlay').style.display = 'flex';
+    }
+
+    function togglePause() {
+      paused = !paused;
+      document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
+    }
+
+    function resetGame() {
+      currentSequence = '1';
+      level = 1;
+      score = 0;
+      userInput = '';
+      paused = false;
+      clearInterval(timer);
+
+      document.getElementById('score').textContent = '점수: 0';
+      document.getElementById('level').textContent = '레벨: 1';
+      document.getElementById('timer').textContent = '제한시간: 10초';
+      document.getElementById('message').textContent = '';
+      document.getElementById('sequence').textContent = '';
+      document.getElementById('userInputDisplay').textContent = '';
+      document.getElementById('startButton').style.display = 'inline-block';
+      document.getElementById('tutorialButton').style.display = 'inline-block';
+      document.getElementById('pauseButton').style.display = 'none';
+      document.getElementById('pauseOverlay').style.display = 'none';
+      document.getElementById('gameOverOverlay').style.display = 'none';
+
+      updateAntCharacterImage(level);
+    }
+
+    function startGame() {
+      document.getElementById('startButton').style.display = 'none';
+      document.getElementById('tutorialButton').style.display = 'none';
+      document.getElementById('pauseButton').style.display = 'inline-block';
+      updateAntCharacterImage(level);
+      displaySequence();
+    }
+
+    function showTutorial() {
+      document.getElementById('tutorialOverlay').style.display = 'flex';
+    }
+
+    function hideTutorial() {
+      document.getElementById('tutorialOverlay').style.display = 'none';
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const gameOverVisible = document.getElementById('gameOverOverlay').style.display === 'flex';
+        const pauseVisible = document.getElementById('pauseOverlay').style.display === 'flex';
+        const startVisible = document.getElementById('startButton').style.display !== 'none';
+
+        if (gameOverVisible) resetGame();
+        else if (pauseVisible) togglePause();
+        else if (startVisible) startGame();
+      }
+      checkInput(e.key);
+    });
+
+    resetGame();
+  </script>
+</body>
+</html>
