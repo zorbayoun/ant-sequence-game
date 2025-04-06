@@ -15,8 +15,20 @@
       background-color: #f5f5f5;
       font-family: Arial, sans-serif;
       overflow: hidden;
+      background-image: url('images/background.png'); /* 상대 경로 */
+      background-size: cotain;      /* 또는 'contain' */
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: #000;      /* 이미지가 안 보일 때 대비 */
     }
 
+    /* 모바일 (화면 너비가 768px 이하일 때) */
+    @media (max-width: 768px) {
+      body {
+        background-size: cover;
+      }
+    }
+    
     #gameContainer {
       text-align: center;
       width: 90%;
@@ -40,12 +52,24 @@
     #userInputDisplay {
       color: #000;
       min-height: 2rem;
+      
+        /* 스크롤바 숨기기 */
+      scrollbar-width: none;        /* Firefox */
+      -ms-overflow-style: none;     /* IE 10+ */
     }
 
     #sequence {
       color: #555;
+      overflow-x: hidden;  /* 추가 권장 */
+      /* 모바일 대응: 너비에 따라 자동 줄이기 */
+      max-width: 100%;
+      display: inline-block;
     }
 
+    #userInputDisplay::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari, Opera */
+}
+    
     #timer, #score, #level, #message {
       margin-bottom: 5px;
     }
@@ -83,6 +107,7 @@
     #tutorialOverlay {
       background-color: rgba(0,0,0,0.8);
       color: white;
+      font-size: 1rem;
     }
 
     #tutorialOverlay button {
@@ -122,6 +147,8 @@
       }
     }
 
+    
+    
     #startButtons {
       margin-top: 20px;
       display: flex;
@@ -131,6 +158,7 @@
   </style>
 </head>
 <body>
+  
   <div id="gameContainer">
     <div id="antCharacter">
       <img id="antImage" src="images/Ant1.png" alt="Ant Character" />
@@ -143,7 +171,8 @@
     <div id="userInputDisplay"></div>
 
     <!-- 시작화면 버튼 -->
-    <div id="startButtons">
+    
+  <div id="startButtons">
       <button id="tutorialButton" onclick="showTutorial()">Tutorial</button>
       <button id="startButton" onclick="startGame()">Start</button>
     </div>
@@ -175,9 +204,9 @@
   <div id="tutorialOverlay">
     <div>
       개미수열은 ‘보는 대로 말하는 수열’이에요.<br><br>
-      예를 들어, 숫자 1을 보면 → "1이 1개 있어요" → 11<br>
-      예를 들어, 숫자 11을 보면 → "1이 2개 있어요" → 12<br>
-      예를 들어, 숫자 12을 보면 → "1이 1개, 2가 1개 있어요" → 1121
+      ex) 숫자 1을 보면 → "1이 1개 있어요" → 11<br>
+      ex) 숫자 11을 보면 → "1이 2개 있어요" → 12<br>
+      ex) 숫자 12을 보면 → "1이 1개, 2가 1개 있어요" → 1121
     </div>
     <button onclick="hideTutorial()">닫기</button>
   </div>
@@ -204,14 +233,16 @@
       userInput = '';
       resetTimer();
       sequenceStartTime = Date.now();
+      adjustSequenceFontSize();
     }
 
     function checkInput(key) {
       if (paused || !'123'.includes(key)) return;
       userInput += key;
       const inputEl = document.getElementById('userInputDisplay');
-      inputEl.textContent = userInput;
-      inputEl.scrollLeft = inputEl.scrollWidth;
+        inputEl.textContent = userInput;
+        inputEl.offsetWidth; // 강제로 리플로우 발생
+        inputEl.scrollLeft = inputEl.scrollWidth;      
       const correctInput = nextSequence.slice(0, userInput.length);
       if (userInput !== correctInput) showGameOver();
       else if (userInput === nextSequence) {
@@ -227,11 +258,11 @@
 
     function updateAntCharacterImage(level) {
       const img = document.getElementById('antImage');
-      if (level >= 11) img.src = 'images/Ant6.png';
-      else if (level >= 9) img.src = 'images/Ant5.png';
-      else if (level >= 7) img.src = 'images/Ant4.png';
-      else if (level >= 5) img.src = 'images/Ant3.png';
-      else if (level >= 3) img.src = 'images/Ant2.png';
+      if (level >= 13) img.src = 'images/Ant6.png';
+      else if (level >= 11) img.src = 'images/Ant5.png';
+      else if (level >= 9) img.src = 'images/Ant4.png';
+      else if (level >= 7) img.src = 'images/Ant3.png';
+      else if (level >= 4) img.src = 'images/Ant2.png';
       else img.src = 'images/Ant1.png';
     }
 
@@ -296,6 +327,22 @@
       document.getElementById('tutorialOverlay').style.display = 'none';
     }
 
+    function adjustSequenceFontSize() {
+      const el = document.getElementById('sequence');
+      requestAnimationFrame(() => {
+        const parentWidth = el.parentElement.offsetWidth;
+        const charCount = currentSequence.length;
+
+        if (window.innerWidth <= 768) {
+          const calculatedSize = parentWidth / (charCount * 1.2);
+          const fontSize = Math.min(32, Math.max(16, calculatedSize)); // ✨ 최소 16px, 최대 32px
+          el.style.fontSize = fontSize + 'px';
+        } else {
+          el.style.fontSize = '2rem'; // PC에서는 고정
+        }
+      });
+    }
+    
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
         const gameOverVisible = document.getElementById('gameOverOverlay').style.display === 'flex';
