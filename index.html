@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>개미수열 게임</title>
   <style>
+    /* body: 배경 이미지와 기본 스타일 설정 (이미지가 없을 때 #000 배경색) */
     body {
       display: flex;
       flex-direction: column;
@@ -12,17 +13,13 @@
       align-items: center;
       height: 100vh;
       margin: 0;
-      background-color: #f5f5f5;
       font-family: Arial, sans-serif;
       overflow: hidden;
-      background-image: url('images/background.png'); /* 상대 경로 */
-      background-size: cotain;      /* 또는 'contain' */
-      background-position: center;
-      background-repeat: no-repeat;
-      background-color: #000;      /* 이미지가 안 보일 때 대비 */
+      /* 배경 이미지와 fallback 배경색을 한 번에 설정 */
+      background: #000 url('images/background.png') no-repeat center/contain;
     }
 
-    /* 모바일 (화면 너비가 768px 이하일 때) */
+    /* 모바일 화면: 배경 이미지를 cover로 확대 */
     @media (max-width: 768px) {
       body {
         background-size: cover;
@@ -41,6 +38,7 @@
       margin-bottom: 10px;
     }
 
+    /* 수열 및 사용자 입력 표시 영역 */
     #sequence, #userInputDisplay {
       font-size: 2rem;
       letter-spacing: 8px;
@@ -52,35 +50,45 @@
     #userInputDisplay {
       color: #000;
       min-height: 2rem;
-      
-        /* 스크롤바 숨기기 */
+      /* 스크롤바 숨김 처리 */
       scrollbar-width: none;        /* Firefox */
-      -ms-overflow-style: none;     /* IE 10+ */
+      -ms-overflow-style: none;       /* IE 10+ */
     }
 
     #sequence {
       color: #555;
-      overflow-x: hidden;  /* 추가 권장 */
-      /* 모바일 대응: 너비에 따라 자동 줄이기 */
+      overflow-x: hidden;
       max-width: 100%;
       display: inline-block;
     }
 
+    /* 웹킷 브라우저에서 스크롤바 숨김 */
     #userInputDisplay::-webkit-scrollbar {
-  display: none;                /* Chrome, Safari, Opera */
-}
+      display: none;
+    }
     
     #timer, #score, #level, #message {
       margin-bottom: 5px;
     }
 
-    button {
-      padding: 10px 20px;
+    /* 기본 버튼 스타일을 제거한 후, system-button 클래스로 이미지 배경 적용 */
+    .system-button {
+      background: url('images/button4.png') no-repeat center center;
+      background-size: contain;
+      border: none;
+      color: black;
       font-size: 1rem;
-      margin: 5px;
+      padding: 15px 20px;
       cursor: pointer;
+      min-width: 100px;
     }
 
+    /* 버튼 텍스트의 가독성을 위한 텍스트 그림자 효과 */
+    .system-button {
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* 오버레이(일시정지, 게임 오버, 튜토리얼) 스타일 */
     #pauseOverlay, #gameOverOverlay, #tutorialOverlay {
       position: fixed;
       top: 0; left: 0;
@@ -92,7 +100,6 @@
       z-index: 999;
       font-size: 1.2rem;
       text-align: center;
-      padding: 20px;
     }
 
     #pauseOverlay {
@@ -114,6 +121,7 @@
       margin-top: 20px;
     }
 
+    /* 모바일 키패드 영역 */
     #mobileKeypad {
       display: flex;
       justify-content: center;
@@ -121,33 +129,22 @@
       gap: 10px;
     }
 
+    /* 모바일 키패드의 이미지 버튼 스타일 */
     .keypad-button {
       width: 60px;
       height: 60px;
-      font-size: 1.5rem;
-      font-weight: bold;
-      border: 2px solid #333;
+      border: 0px solid #333;
       border-radius: 10px;
-      background-color: white;
       box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .keypad-button:active {
-      background-color: #e0e0e0;
+      cursor: pointer;
     }
 
     @media (max-width: 500px) {
       .keypad-button {
         width: 50px;
         height: 50px;
-        font-size: 1.2rem;
       }
     }
-
-    
     
     #startButtons {
       margin-top: 20px;
@@ -158,94 +155,107 @@
   </style>
 </head>
 <body>
-  
   <div id="gameContainer">
+    <!-- 개미 캐릭터 이미지 -->
     <div id="antCharacter">
       <img id="antImage" src="images/Ant1.png" alt="Ant Character" />
     </div>
+    <!-- 게임 상태 표시 -->
     <div id="level">레벨: 1</div>
     <div id="score">점수: 0</div>
     <div id="timer">제한시간: 10초</div>
     <div id="message"></div>
+    <!-- 수열 및 사용자 입력 표시 -->
     <div id="sequence"></div>
     <div id="userInputDisplay"></div>
 
     <!-- 시작화면 버튼 -->
-    
-  <div id="startButtons">
-      <button id="tutorialButton" onclick="showTutorial()">Tutorial</button>
-      <button id="startButton" onclick="startGame()">Start</button>
+    <div id="startButtons">
+      <button id="tutorialButton" class="system-button" onclick="showTutorial()">Tutorial</button>
+      <button id="startButton" class="system-button" onclick="startGame()">Start</button>
     </div>
 
-    <button id="pauseButton" onclick="togglePause()" style="display:none;">Pause</button>
+    <!-- 게임 일시정지 버튼 (게임 시작 후 표시) -->
+    <button id="pauseButton" class="system-button" onclick="togglePause()" style="display:none;">Pause</button>
 
-    <!-- 키패드 -->
+    <!-- 모바일 키패드: 기존 버튼 대신 이미지 사용 -->
     <div id="mobileKeypad">
-      <button class="keypad-button" onclick="checkInput('1')">1</button>
-      <button class="keypad-button" onclick="checkInput('2')">2</button>
-      <button class="keypad-button" onclick="checkInput('3')">3</button>
+      <img class="keypad-button" src="images/button1.png" alt="버튼 1" onclick="checkInput('1')">
+      <img class="keypad-button" src="images/button2.png" alt="버튼 2" onclick="checkInput('2')">
+      <img class="keypad-button" src="images/button3.png" alt="버튼 3" onclick="checkInput('3')">
     </div>
   </div>
 
-  <!-- Pause -->
+  <!-- Pause Overlay -->
   <div id="pauseOverlay">
-    <div>Pause 중</div>
-    <button onclick="togglePause()">Continue</button>
-    <button onclick="resetGame()">Restart</button>
+    <div>Pause 중</div><br>
+    <button class="system-button" onclick="togglePause()">Continue</button>
+    <button class="system-button" onclick="resetGame()">Restart</button>
   </div>
 
-  <!-- Game Over -->
+  <!-- Game Over Overlay -->
   <div id="gameOverOverlay">
-    <div id="gameOverText"></div>
-    <button onclick="resetGame()">Restart</button>
+    <div id="gameOverText"></div><br>
+    <button class="system-button" onclick="resetGame()">Restart</button>
   </div>
 
-  <!-- Tutorial -->
+  <!-- Tutorial Overlay -->
   <div id="tutorialOverlay">
     <div>
       개미수열은 ‘보는 대로 말하는 수열’이에요.<br><br>
-      ex) 숫자 1을 보면 → "1이 1개 있어요" → 11<br>
-      ex) 숫자 11을 보면 → "1이 2개 있어요" → 12<br>
-      ex) 숫자 12을 보면 → "1이 1개, 2가 1개 있어요" → 1121
+      ex) 1을 보면 → "1이 1개 있어요" → 11<br>
+      ex) 11을 보면 → "1이 2개 있어요" → 12<br>
+      ex) 1121을 보면 → "1이 2개, 2가 1개, 1이 1개 있어요" → 122111
     </div>
-    <button onclick="hideTutorial()">닫기</button>
+    <button class="system-button" onclick="hideTutorial()">닫기</button>
   </div>
 
   <script>
+    // 개미수열 게임 초기 설정
     let currentSequence = '1', nextSequence = '', userInput = '';
-    let level = 1, score = 0, timer, paused = false, sequenceStartTime;
+    let level = 1, score = 0, timer, paused = false;
     const timeLimit = 10;
-
+    
+    // 다음 개미수열(look-and-say sequence)을 계산하는 함수
     function nextAntSequence(seq) {
       let result = '', i = 0;
       while (i < seq.length) {
         let count = 1;
-        while (i + 1 < seq.length && seq[i] === seq[i + 1]) { i++; count++; }
-        result += seq[i] + count; i++;
+        while (i + 1 < seq.length && seq[i] === seq[i + 1]) { 
+          i++; 
+          count++; 
+        }
+        result += seq[i] + count;
+        i++;
       }
       return result;
     }
 
+    // 현재 수열 및 사용자 입력을 초기화하고 화면에 표시한 후 타이머와 폰트 조정을 호출
     function displaySequence() {
       document.getElementById('sequence').textContent = currentSequence;
       document.getElementById('userInputDisplay').textContent = '';
       nextSequence = nextAntSequence(currentSequence);
       userInput = '';
       resetTimer();
-      sequenceStartTime = Date.now();
       adjustSequenceFontSize();
     }
 
+    // 사용자 입력 처리 함수
     function checkInput(key) {
+      // '1', '2', '3' 외의 키 입력 혹은 일시정지 상태에서는 무시
       if (paused || !'123'.includes(key)) return;
+      
       userInput += key;
       const inputEl = document.getElementById('userInputDisplay');
-        inputEl.textContent = userInput;
-        inputEl.offsetWidth; // 강제로 리플로우 발생
-        inputEl.scrollLeft = inputEl.scrollWidth;      
+      inputEl.textContent = userInput;
+      inputEl.offsetWidth; // 리플로우 강제 발생 (스크롤 갱신)
+      inputEl.scrollLeft = inputEl.scrollWidth;
+      
       const correctInput = nextSequence.slice(0, userInput.length);
-      if (userInput !== correctInput) showGameOver();
-      else if (userInput === nextSequence) {
+      if (userInput !== correctInput) {
+        showGameOver();
+      } else if (userInput === nextSequence) {
         score += nextSequence.length;
         level++;
         document.getElementById('score').textContent = '점수: ' + score;
@@ -256,6 +266,7 @@
       }
     }
 
+    // 레벨에 따라 개미 캐릭터 이미지를 업데이트하는 함수
     function updateAntCharacterImage(level) {
       const img = document.getElementById('antImage');
       if (level >= 13) img.src = 'images/Ant6.png';
@@ -266,28 +277,34 @@
       else img.src = 'images/Ant1.png';
     }
 
+    // 타이머 초기화 및 시작 함수
     function resetTimer() {
-      clearInterval(timer); let timeLeft = timeLimit;
+      clearInterval(timer);
+      let timeLeft = timeLimit;
       document.getElementById('timer').textContent = '제한시간: ' + timeLeft + '초';
       timer = setInterval(() => {
         if (!paused && --timeLeft <= 0) {
-          clearInterval(timer); showGameOver();
+          clearInterval(timer);
+          showGameOver();
         }
         document.getElementById('timer').textContent = '제한시간: ' + timeLeft + '초';
       }, 1000);
     }
 
+    // 게임 오버 처리 함수
     function showGameOver() {
       clearInterval(timer);
       document.getElementById('gameOverText').innerText = `Game Over!\n레벨: ${level}, 점수: ${score}`;
       document.getElementById('gameOverOverlay').style.display = 'flex';
     }
 
+    // 게임 일시정지 토글 함수
     function togglePause() {
       paused = !paused;
       document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
     }
 
+    // 게임 초기화 및 재시작 함수
     function resetGame() {
       currentSequence = '1';
       level = 1;
@@ -311,6 +328,7 @@
       updateAntCharacterImage(level);
     }
 
+    // 게임 시작 함수
     function startGame() {
       document.getElementById('startButton').style.display = 'none';
       document.getElementById('tutorialButton').style.display = 'none';
@@ -319,6 +337,7 @@
       displaySequence();
     }
 
+    // 튜토리얼 표시 및 숨김 함수
     function showTutorial() {
       document.getElementById('tutorialOverlay').style.display = 'flex';
     }
@@ -327,22 +346,31 @@
       document.getElementById('tutorialOverlay').style.display = 'none';
     }
 
+    // 수열의 폰트 크기를 조정하며, 모바일 환경에서 레벨 11 이상인 경우 고정 폰트 및 두 줄 표시
     function adjustSequenceFontSize() {
       const el = document.getElementById('sequence');
       requestAnimationFrame(() => {
-        const parentWidth = el.parentElement.offsetWidth;
-        const charCount = currentSequence.length;
-
-        if (window.innerWidth <= 768) {
-          const calculatedSize = parentWidth / (charCount * 1.2);
-          const fontSize = Math.min(32, Math.max(16, calculatedSize)); // ✨ 최소 16px, 최대 32px
-          el.style.fontSize = fontSize + 'px';
+        if (window.innerWidth <= 768 && level >= 11) {
+          el.style.fontSize = '18px'; // 고정 폰트 사이즈
+          const seq = currentSequence;
+          const halfLength = Math.ceil(seq.length / 2);
+          el.innerHTML = seq.slice(0, halfLength) + '<br>' + seq.slice(halfLength);
         } else {
-          el.style.fontSize = '2rem'; // PC에서는 고정
+          el.textContent = currentSequence;
+          if (window.innerWidth <= 768) {
+            const parentWidth = el.parentElement.offsetWidth;
+            const charCount = currentSequence.length;
+            const calculatedSize = parentWidth / (charCount * 1.2);
+            const fontSize = Math.min(32, Math.max(18, calculatedSize));
+            el.style.fontSize = fontSize + 'px';
+          } else {
+            el.style.fontSize = '2rem';
+          }
         }
       });
     }
-    
+
+    // 키보드 이벤트 처리: Enter 키는 게임 제어, 그 외 숫자 입력은 checkInput 호출
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
         const gameOverVisible = document.getElementById('gameOverOverlay').style.display === 'flex';
@@ -356,6 +384,7 @@
       checkInput(e.key);
     });
 
+    // 초기화: 게임 시작 전에 초기 상태 설정
     resetGame();
   </script>
 </body>
