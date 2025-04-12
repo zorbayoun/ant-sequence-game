@@ -374,19 +374,22 @@
       });
     }
 
-    // 키보드 이벤트 처리: Enter 키는 게임 제어, 그 외 숫자 입력은 checkInput 호출
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        const gameOverVisible = document.getElementById('gameOverOverlay').style.display === 'flex';
-        const pauseVisible = document.getElementById('pauseOverlay').style.display === 'flex';
-        const startVisible = document.getElementById('startButton').style.display !== 'none';
+document.addEventListener('keydown', function (e) {
+  // 모바일에서는 키다운 이벤트를 무시하고, PC에서는 처리합니다.
+  if (window.innerWidth <= 768) return;  
 
-        if (gameOverVisible) resetGame();
-        else if (pauseVisible) togglePause();
-        else if (startVisible) startGame();
-      }
-      checkInput(e.key);
-    });
+  if (e.key === 'Enter') {
+    const gameOverVisible = document.getElementById('gameOverOverlay').style.display === 'flex';
+    const pauseVisible = document.getElementById('pauseOverlay').style.display === 'flex';
+    const startVisible = document.getElementById('startButton').style.display !== 'none';
+
+    if (gameOverVisible) resetGame();
+    else if (pauseVisible) togglePause();
+    else if (startVisible) startGame();
+  }
+  checkInput(e.key);
+});
+
 
     // 초기화: 게임 시작 전에 초기 상태 설정
     resetGame();
