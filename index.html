@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>개미수열 게임</title>
   <style>
+    @import url('https://fastly.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css');
+
     /* body: 배경 이미지와 기본 스타일 설정 (이미지가 없을 때 #000 배경색) */
     body {
       display: flex;
@@ -13,7 +15,7 @@
       align-items: center;
       height: 100vh;
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: 'Galmuri9', 'GalmuriMono', sans-serif;
       overflow: hidden;
       /* 배경 이미지와 fallback 배경색을 한 번에 설정 */
       background: #000 url('images/background.png') no-repeat center/contain;
@@ -76,8 +78,9 @@
       background: url('images/button4.png') no-repeat center center;
       background-size: contain;
       border: none;
-      color: black;
+      color: black; 
       font-size: 1rem;
+      font-family: 'Galmuri7', sans-serif;
       padding: 15px 20px;
       cursor: pointer;
       min-width: 100px;
@@ -85,7 +88,7 @@
 
     /* 버튼 텍스트의 가독성을 위한 텍스트 그림자 효과 */
     .system-button {
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      text-shadow: 1px 0px  rgba(0,0,0,0.5);
     }
 
     /* 오버레이(일시정지, 게임 오버, 튜토리얼) 스타일 */
@@ -215,6 +218,9 @@
   </div>
 
   <script>
+    //사운드
+    const keyClickSound = new Audio('sound/click2.mp3');
+
     // 개미수열 게임 초기 설정
     let currentSequence = '1', nextSequence = '', userInput = '';
     let level = 1, score = 0, timer, paused = false;
@@ -250,6 +256,12 @@
       // '1', '2', '3' 외의 키 입력 혹은 일시정지 상태에서는 무시
       if (paused || !'123'.includes(key)) return;
       
+      
+  // 🎵 클릭 사운드 재생
+  keyClickSound.currentTime = 0; // 중첩 방지 (빠른 연속 입력 대응)
+  keyClickSound.play();
+
+  // 기존 로직 이어서...
       userInput += key;
       const inputEl = document.getElementById('userInputDisplay');
       inputEl.textContent = userInput;
